@@ -134,7 +134,8 @@ export function createServer(options: ServerOptions = {}): McpServer {
       description:
         "Check how healthy a packaged food or drink is. Looks it up in Open Food Facts (3M+ products) by barcode or by name, and returns a 0-100 health score (Excellent / Good / Poor / Bad) with the reasons: nutrition (Nutri-Score), additives and their risk level, and how processed it is. Use this whenever the user asks whether a food is healthy, mentions a product, or gives a barcode. Prefer the barcode when you have it.",
       inputSchema: z.object({
-        barcode: z.string().optional().describe("EAN/UPC barcode digits, e.g. 3017620422003."),
+        // Coerced: clients and models sometimes send the digits as a number.
+        barcode: z.coerce.string().optional().describe("EAN/UPC barcode digits, e.g. 3017620422003."),
         query: z.string().optional().describe("Product name, ideally with the brand, e.g. 'Nutella hazelnut spread'. Used when there is no barcode."),
         country: z.string().optional().describe("Optional country to prefer when searching by name, e.g. 'united-states', 'france', 'united-kingdom'."),
       }),
@@ -192,7 +193,7 @@ export function createServer(options: ServerOptions = {}): McpServer {
       description:
         "Find similar products (same category in Open Food Facts) that score clearly higher than the given product. Use it when the user asks what to buy instead, or after a product scores Poor or Bad.",
       inputSchema: z.object({
-        barcode: z.string().describe("Barcode of the product to beat."),
+        barcode: z.coerce.string().describe("Barcode of the product to beat."),
         country: z.string().optional().describe("Only suggest products sold in this country, e.g. 'united-states'."),
         limit: z.number().int().min(1).max(10).optional(),
       }),
