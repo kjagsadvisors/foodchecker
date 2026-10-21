@@ -132,7 +132,7 @@ export function createServer(options: ServerOptions = {}): McpServer {
     {
       title: "Check a food product",
       description:
-        "Check how healthy a packaged food or drink is. Looks it up in Open Food Facts (3M+ products) by barcode or by name, and returns a 0-100 health score (Excellent / Good / Poor / Bad) with the reasons: nutrition (Nutri-Score), additives and their risk level, and how processed it is. Use this whenever the user asks whether a food is healthy, mentions a product, or gives a barcode. Prefer the barcode when you have it.",
+        "Looks up a packaged food or drink in Open Food Facts (3M+ products) by barcode or by name and returns a 0-100 health score (Excellent / Good / Poor / Bad) with the reasons: nutrition (Nutri-Score), additives and their risk level, and how processed it is. For questions such as whether a product is healthy. A barcode gives the most precise match.",
       inputSchema: z.object({
         // Coerced: clients and models sometimes send the digits as a number.
         barcode: z.coerce.string().optional().describe("EAN/UPC barcode digits, e.g. 3017620422003."),
@@ -157,7 +157,7 @@ export function createServer(options: ServerOptions = {}): McpServer {
     {
       title: "Score a food from its label",
       description:
-        "Score a food from its label when the user shares a photo of the packaging or pastes the ingredient list and nutrition facts (also for products that aren't in the database). Transcribe the ingredient list word for word, including E-numbers and words in brackets, and copy the nutrition facts table. For US labels use basis 'per_serving' with the serving size in grams. Pass whatever is legible; the tool reports what is missing.",
+        "Scores a food from its label: the ingredient list and/or the nutrition facts, for example from a photo of the packaging or pasted text, including products that aren't in the database. Most accurate with the ingredient list exactly as printed, including E-numbers and words in brackets. Nutrition values can be per 100 g or per serving (with the serving size). Returns the same 0-100 score and reports any missing data.",
       inputSchema: z.object({
         product_name: z.string().optional(),
         brand: z.string().optional(),
@@ -191,7 +191,7 @@ export function createServer(options: ServerOptions = {}): McpServer {
     {
       title: "Find healthier alternatives",
       description:
-        "Find similar products (same category in Open Food Facts) that score clearly higher than the given product. Use it when the user asks what to buy instead, or after a product scores Poor or Bad.",
+        "Finds similar products in the same Open Food Facts category that score clearly higher than the given product, best first, each with its score.",
       inputSchema: z.object({
         barcode: z.coerce.string().describe("Barcode of the product to beat."),
         country: z.string().optional().describe("Only suggest products sold in this country, e.g. 'united-states'."),
@@ -222,7 +222,7 @@ export function createServer(options: ServerOptions = {}): McpServer {
     "explain_additive",
     {
       title: "Explain a food additive",
-      description: "Explain what a food additive is, what it does, and its risk level, by E-number (E250) or name (sodium nitrite, Red 40, carrageenan).",
+      description: "Explains what a food additive is, what it does, and its risk level with sources, by E-number (E250) or name (sodium nitrite, Red 40, carrageenan).",
       inputSchema: z.object({ additive: z.string().describe("E-number or name, e.g. 'E471' or 'Red 40'.") }),
       annotations: { ...READ_ONLY, openWorldHint: false, title: "Explain a food additive" },
       _meta: uiMeta("Looking up the additive…", "Additive explained"),
