@@ -9,7 +9,7 @@ import { UserFacingError, analyzeLabel, checkFood, explainAdditive, findAlternat
 export const VERSION = "0.1.0";
 
 const INSTRUCTIONS = `FoodChecker rates packaged food and drinks from 0 to 100 (Excellent 75+, Good 50-74, Poor 25-49, Bad 0-24).
-The score starts from nutrition quality (Nutri-Score 2023), then subtracts points for risky additives and ultra-processing (NOVA). High-risk additives or trans fat cap the score at 49.
+The score starts from nutrition quality (Nutri-Score 2023), then takes a percentage off for risky additives and ultra-processing (NOVA). High-risk additives or trans fat cap the score at 49.
 - Barcode or product name: call check_food.
 - Photo of a label, or pasted ingredients and nutrition facts: transcribe them and call analyze_label. If the photo only shows a barcode, read the digits and call check_food.
 - "What can I buy instead?": call find_healthier_alternatives with the barcode.

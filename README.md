@@ -38,6 +38,10 @@ ChatGPT / Claude  ──MCP──▶  FoodChecker server  ──▶  Open Food F
 
 All tools are read-only and need no login.
 
+## Use the hosted server
+
+A public instance runs at **https://foodchecker-ebon.vercel.app/mcp**. Paste that URL into ChatGPT or Claude as shown below. You can try the score card in a browser at [https://foodchecker-ebon.vercel.app](https://foodchecker-ebon.vercel.app).
+
 ## Run it locally
 
 ```bash
@@ -51,10 +55,10 @@ npm run dev
 
 ## Add it to ChatGPT
 
-You need a public URL (see [Deploy](#deploy)). ChatGPT can't reach `localhost`.
+Use the hosted URL or your own deployment. ChatGPT can't reach `localhost`.
 
 1. Go to **chatgpt.com/plugins**, click **+**, then **Add custom MCP server**.
-2. Server URL: `https://your-deployment/mcp`. Authentication: **No authentication**.
+2. Server URL: `https://foodchecker-ebon.vercel.app/mcp`. Authentication: **No authentication**.
 3. Create it, then ask: "Is Nutella healthy?"
 
 To list it in the ChatGPT app directory, follow OpenAI's submission flow at platform.openai.com/plugins. FoodChecker already supports two of its requirements through environment variables:
@@ -65,13 +69,13 @@ You'll also need a privacy policy URL, a terms URL, test prompts and a demo vide
 
 ## Add it to Claude
 
-- **claude.ai or Claude Desktop:** go to **Customize → Connectors → Add custom connector**, paste `https://your-deployment/mcp`, and choose **No sign-in**. The score card renders on web, desktop and mobile.
-- **Claude Code, remote server:** run `claude mcp add --transport http foodchecker https://your-deployment/mcp`.
+- **claude.ai or Claude Desktop:** go to **Customize → Connectors → Add custom connector**, paste `https://foodchecker-ebon.vercel.app/mcp`, and choose **No sign-in**. The score card renders on web, desktop and mobile.
+- **Claude Code, remote server:** run `claude mcp add --transport http foodchecker https://foodchecker-ebon.vercel.app/mcp`.
 - **Claude Code, local server:** run `claude mcp add foodchecker -- npx tsx /path/to/repo/src/stdio.ts`.
-- **Claude Code plugin with a usage skill:** this repo is a plugin marketplace. First edit the URL in `plugins/foodchecker/.mcp.json` to point at your deployment. Then run:
+- **Claude Code plugin with a usage skill:** this repo is a plugin marketplace. It points at the hosted server. If you self-host, change the URL in `plugins/foodchecker/.mcp.json`. Then run:
 
   ```
-  /plugin marketplace add <github-owner>/<repo>
+  /plugin marketplace add kjagsadvisors/foodchecker
   /plugin install foodchecker@foodchecker
   ```
 
