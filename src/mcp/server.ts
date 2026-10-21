@@ -8,6 +8,9 @@ import { UserFacingError, analyzeLabel, checkFood, explainAdditive, findAlternat
 
 export const VERSION = "0.1.0";
 
+/** Public origin of the hosted instance, used for the server icon and website link. */
+export const PUBLIC_URL = process.env.PUBLIC_URL ?? "https://foodchecker-ebon.vercel.app";
+
 const INSTRUCTIONS = `FoodChecker rates packaged food and drinks from 0 to 100 (Excellent 75+, Good 50-74, Poor 25-49, Bad 0-24).
 The score starts from nutrition quality (Nutri-Score 2023), then takes a percentage off for risky additives and ultra-processing (NOVA). High-risk additives or trans fat cap the score at 49.
 - Barcode or product name: call check_food.
@@ -69,7 +72,19 @@ const nutritionSchema = z
   .describe("The nutrition facts table, copied exactly.");
 
 export function createServer(): McpServer {
-  const server = new McpServer({ name: "foodchecker", version: VERSION, title: "FoodChecker" }, { instructions: INSTRUCTIONS });
+  const server = new McpServer(
+    {
+      name: "foodchecker",
+      version: VERSION,
+      title: "FoodChecker",
+      websiteUrl: PUBLIC_URL,
+      icons: [
+        { src: `${PUBLIC_URL}/icon-512.png`, mimeType: "image/png", sizes: ["512x512"] },
+        { src: `${PUBLIC_URL}/icon.svg`, mimeType: "image/svg+xml", sizes: ["any"] },
+      ],
+    },
+    { instructions: INSTRUCTIONS },
+  );
 
   registerAppResource(
     server,

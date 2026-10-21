@@ -4,6 +4,7 @@
  *
  *   /mcp           MCP endpoint (Streamable HTTP) for ChatGPT, Claude and other clients
  *   /              landing page with setup instructions
+ *   /privacy, /terms, /support   pages that app directories link to
  *   /preview       the score card rendered as a normal web page (?barcode= or ?q=)
  *   /api/tool      JSON tool calls used by /preview
  *   /health        liveness check
@@ -11,6 +12,7 @@
 import { createMcpHandler } from "@modelcontextprotocol/server";
 import { VERSION, createServer } from "./mcp/server.js";
 import { widgetHtml } from "./mcp/widget.js";
+import { ICON_SVG, landingPage, privacyPage, supportPage, termsPage } from "./pages.js";
 import { UserFacingError, analyzeLabel, checkFood, explainAdditive, findAlternatives } from "./service.js";
 
 const mcp = createMcpHandler(() => createServer());
@@ -104,47 +106,14 @@ export async function handle(request: Request): Promise<Response> {
   }
 
   if (path === "/") return html(landingPage(url.origin));
+  if (path === "/privacy") return html(privacyPage());
+  if (path === "/terms") return html(termsPage());
+  if (path === "/support") return html(supportPage(url.origin));
+  if (path === "/icon.svg") return new Response(ICON_SVG, { headers: { "content-type": "image/svg+xml", "cache-control": "public, max-age=86400" } });
 
   return new Response("Not found", { status: 404 });
 }
 
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
-}
-
-function landingPage(origin: string): string {
-  const mcpUrl = `${origin}/mcp`;
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>FoodChecker</title>
-<style>
-:root{--bg:#fafaf8;--fg:#17181c;--muted:#61656f;--line:#e4e5ea;--card:#fff;--accent:#1e9e57}
-@media (prefers-color-scheme:dark){:root{--bg:#141518;--fg:#f1f2f4;--muted:#a0a4ae;--line:#2b2d33;--card:#1c1d21}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 ui-sans-serif,-apple-system,"Segoe UI",Roboto,sans-serif}
-main{max-width:760px;margin:0 auto;padding:48px 16px 64px}h1{font-size:40px;margin:0 0 8px;letter-spacing:-.02em}
-.lead{font-size:19px;color:var(--muted);margin:0 0 28px}code,pre{font:13px ui-monospace,Menlo,monospace}
-pre{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;overflow:auto}
-section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:16px 0}
-h2{font-size:18px;margin:0 0 8px}ol{margin:8px 0 0;padding-left:20px}li{margin:4px 0}a{color:var(--accent)}
-form{display:flex;gap:8px;margin:12px 0 0}input{flex:1;font:inherit;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
-button{font:inherit;padding:10px 16px;border-radius:10px;border:0;background:var(--fg);color:var(--bg);cursor:pointer}
-.scale{display:flex;gap:4px;margin:16px 0 0;font-size:13px}.scale span{flex:1;padding:6px 8px;border-radius:8px;color:#fff;font-weight:600}
-</style></head><body><main>
-<h1>FoodChecker</h1>
-<p class="lead">An open-source food label checker that runs inside ChatGPT and Claude. Ask "is this healthy?" with a barcode, a product name or a photo of the label, and get a 0–100 score with the reasons.</p>
-<div class="scale"><span style="background:#e5484d">0–24 Bad</span><span style="background:#ef8f2f">25–49 Poor</span><span style="background:#79b94a">50–74 Good</span><span style="background:#1e9e57">75–100 Excellent</span></div>
-<section><h2>Try the score card</h2>
-<form action="/preview"><input name="q" placeholder="Product name, e.g. Coca-Cola, Oreo, Fage yogurt" aria-label="Product name"><button>Check</button></form>
-<form action="/preview"><input name="barcode" placeholder="Or a barcode, e.g. 3017620422003" inputmode="numeric" aria-label="Barcode"><button>Check</button></form></section>
-<section><h2>Add to ChatGPT</h2><ol>
-<li>Open <b>chatgpt.com/plugins</b>, click <b>+</b>, then <b>Add custom MCP server</b>.</li>
-<li>Server URL: <code>${mcpUrl}</code>. Authentication: <b>No authentication</b>.</li>
-<li>Create it, then mention FoodChecker in a chat: "Is Nutella healthy?"</li></ol></section>
-<section><h2>Add to Claude</h2><ol>
-<li>claude.ai or Claude Desktop: <b>Customize → Connectors → Add custom connector</b>.</li>
-<li>URL: <code>${mcpUrl}</code>, choose <b>No sign-in</b>.</li>
-<li>Claude Code: <code>claude mcp add --transport http foodchecker ${mcpUrl}</code></li></ol></section>
-<section><h2>How the score works</h2>
-<p>Nutrition quality (Nutri-Score 2023) sets the base from 0 to 100. Risky additives take points off (high −25, moderate −10, limited −3), ultra-processed food takes −10, and a high-risk additive or trans fat caps the score at 49. Every additive rating states its reason and source, and the whole method is open for review.</p></section>
-<p style="color:var(--muted);font-size:13px">Product data © Open Food Facts contributors, ODbL. Not medical advice.</p>
-</main></body></html>`;
 }
