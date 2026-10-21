@@ -138,7 +138,7 @@ export function createServer(options: ServerOptions = {}): McpServer {
         query: z.string().optional().describe("Product name, ideally with the brand, e.g. 'Nutella hazelnut spread'. Used when there is no barcode."),
         country: z.string().optional().describe("Optional country to prefer when searching by name, e.g. 'united-states', 'france', 'united-kingdom'."),
       }),
-      annotations: READ_ONLY,
+      annotations: { ...READ_ONLY, title: "Check a food product" },
       _meta: uiMeta("Checking the product…", "Product checked"),
     },
     async (args) => {
@@ -169,7 +169,7 @@ export function createServer(options: ServerOptions = {}): McpServer {
           .describe("Nutri-Score family. Use fat_oil_nuts_seeds for oils, butter, nuts and nut butters; cheese for cheese; red_meat for beef, pork or lamb products."),
         fruit_veg_percent: z.number().min(0).max(100).optional().describe("% of fruit, vegetables and legumes, if the label states it."),
       }),
-      annotations: { ...READ_ONLY, openWorldHint: false },
+      annotations: { ...READ_ONLY, openWorldHint: false, title: "Score a food from its label" },
       _meta: uiMeta("Reading the label…", "Label scored"),
     },
     async (args) => {
@@ -196,7 +196,7 @@ export function createServer(options: ServerOptions = {}): McpServer {
         country: z.string().optional().describe("Only suggest products sold in this country, e.g. 'united-states'."),
         limit: z.number().int().min(1).max(10).optional(),
       }),
-      annotations: READ_ONLY,
+      annotations: { ...READ_ONLY, title: "Find healthier alternatives" },
       _meta: uiMeta("Finding healthier options…", "Alternatives found"),
     },
     async (args) => {
@@ -223,7 +223,7 @@ export function createServer(options: ServerOptions = {}): McpServer {
       title: "Explain a food additive",
       description: "Explain what a food additive is, what it does, and its risk level, by E-number (E250) or name (sodium nitrite, Red 40, carrageenan).",
       inputSchema: z.object({ additive: z.string().describe("E-number or name, e.g. 'E471' or 'Red 40'.") }),
-      annotations: { ...READ_ONLY, openWorldHint: false },
+      annotations: { ...READ_ONLY, openWorldHint: false, title: "Explain a food additive" },
       _meta: uiMeta("Looking up the additive…", "Additive explained"),
     },
     async (args) => {
