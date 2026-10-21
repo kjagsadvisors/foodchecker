@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>FoodChecker dev host</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 16px; background: #eef0f3; }
+  .chat { max-width: 680px; margin: 0 auto; }
+  iframe { width: 100%; border: 0; height: 300px; display: block; }
+  ol { font: 12px ui-monospace, monospace; color: #555; list-style: none; padding: 0; }
+</style>
+</head>
+<body>
+<div class="chat">
+  <p><b>Assistant</b> (simulated MCP Apps host using the official AppBridge)</p>
+  <iframe id="view" sandbox="allow-scripts allow-same-origin" title="FoodChecker widget"></iframe>
+  <ol id="log"></ol>
+</div>
+<script src="/dev/host.js"></script>
+</body>
+</html>

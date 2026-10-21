@@ -1,0 +1,11 @@
+{
+  "name": "foodchecker",
+  "owner": { "name": "FoodChecker contributors" },
+  "plugins": [
+    {
+      "name": "foodchecker",
+      "source": "./plugins/foodchecker",
+      "description": "Check if packaged food is healthy: 0-100 score from nutrition, additives and processing, using Open Food Facts."
+    }
+  ]
+}

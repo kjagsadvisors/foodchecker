@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "foodchecker": {
+      "type": "http",
+      "url": "https://YOUR-FOODCHECKER-DEPLOYMENT/mcp"
+    }
+  }
+}

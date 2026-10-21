@@ -1,0 +1,9 @@
+{
+  "name": "foodchecker",
+  "displayName": "FoodChecker",
+  "version": "0.1.0",
+  "description": "Open-source food label checker. Scores packaged food and drinks 0-100 (Excellent / Good / Poor / Bad) from nutrition (Nutri-Score), risky additives and ultra-processing, with healthier alternatives. Data from Open Food Facts.",
+  "author": { "name": "FoodChecker contributors" },
+  "license": "MIT",
+  "keywords": ["food", "nutrition", "health", "ingredients", "additives", "nutri-score", "open-food-facts"]
+}
