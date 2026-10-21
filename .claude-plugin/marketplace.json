@@ -1,6 +1,9 @@
 {
   "name": "foodchecker",
-  "owner": { "name": "FoodChecker contributors" },
+  "owner": {
+    "name": "FoodChecker contributors"
+  },
+  "description": "FoodChecker: check whether packaged food is healthy, with a 0-100 score from nutrition, additives and processing.",
   "plugins": [
     {
       "name": "foodchecker",

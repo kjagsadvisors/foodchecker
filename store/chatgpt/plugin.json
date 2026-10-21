@@ -1,0 +1,99 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "foodchecker",
+  "version": "0.1.0",
+  "description": "Check whether packaged food is healthy: a 0-100 score from nutrition, additives and processing, with healthier alternatives. Data from Open Food Facts.",
+  "author": {
+    "name": "Kjags Advisors",
+    "url": "https://github.com/kjagsadvisors"
+  },
+  "homepage": "https://foodchecker-ebon.vercel.app",
+  "repository": "https://github.com/kjagsadvisors/foodchecker",
+  "license": "MIT",
+  "keywords": ["food", "nutrition", "health", "ingredients", "additives", "nutri-score"],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "FoodChecker",
+        "shortDescription": "Health scores for food labels",
+        "longDescription": "FoodChecker tells you how healthy a packaged food or drink is, right in the chat. Give it a barcode or a product name, or share a photo of the label, and you get a 0-100 score (Excellent, Good, Poor or Bad) with the reasons behind it.\n\nWhat it checks:\n- Nutrition: based on Nutri-Score 2023 (calories, sugar, saturated fat, salt, fiber, protein, fruit and vegetables).\n- Additives: each one is listed with its function and a risk level, and every rating states its reason and source (EFSA, IARC, FDA and peer-reviewed studies).\n- Processing: how processed the food is, on the NOVA scale, and which ingredients make it ultra-processed.\n\nIt can also find similar products in the same category that score better, and explain any additive by E-number or name (for example E471 or Red 40).\n\nWho it's for: shoppers who want to understand a label quickly, parents comparing snacks, and anyone cutting down on ultra-processed food.\n\nLimitations: product data comes from Open Food Facts, a crowd-sourced database of over 3 million products. Some entries are incomplete, and the card says what is missing; a photo of the label fills the gaps. Scores compare foods per 100 g or 100 ml, not per portion. FoodChecker gives general information. It is not medical or dietary advice, and you shouldn't rely on it for allergens. The scoring method and code are open source.",
+        "developerName": "Kjags Advisors",
+        "category": "Other",
+        "capabilities": [
+          "Score packaged food from 0 to 100",
+          "Score a product from a photo of its label",
+          "Explain food additives and their risk level",
+          "Suggest healthier alternatives in the same category"
+        ],
+        "websiteURL": "https://foodchecker-ebon.vercel.app",
+        "supportURL": "https://foodchecker-ebon.vercel.app/support",
+        "privacyPolicyURL": "https://foodchecker-ebon.vercel.app/privacy",
+        "termsOfServiceURL": "https://foodchecker-ebon.vercel.app/terms",
+        "defaultPrompt": [
+          "Is Nutella healthy?",
+          "Check this barcode: 5449000000996",
+          "What should I buy instead of regular Coca-Cola?"
+        ],
+        "brandColor": "#1E9E57",
+        "brandColorDark": "#3CCF7F",
+        "composerIcon": "./assets/icon.png",
+        "logo": "./assets/logo.png"
+      },
+      "review": {
+        "test_cases": {
+          "positive": [
+            {
+              "description": "Look up a well-known product by name",
+              "prompt": "Is Nutella healthy?",
+              "tools_triggered": "check_food",
+              "expected_behavior": "Shows the score card for Nutella (Ferrero hazelnut spread) rated Bad, with the reasons: very sugary, high in saturated fat and calories. Lists other matching products in the text."
+            },
+            {
+              "description": "Look up a product by barcode",
+              "prompt": "Check barcode 5449000000996",
+              "tools_triggered": "check_food",
+              "expected_behavior": "Shows Coca-Cola Original rated Bad (about 15/100): too sweet, caramel colour E150d (moderate risk), phosphoric acid (limited risk), ultra-processed. The card shows the score math."
+            },
+            {
+              "description": "Score a product from label text the user pastes",
+              "prompt": "Is this cereal healthy? Ingredients: whole grain oats, sugar, corn starch, honey, brown sugar syrup, salt, tripotassium phosphate, canola oil, natural almond flavor. Nutrition per 37 g serving: 140 kcal, total fat 2 g, saturated fat 0.5 g, sodium 190 mg, carbs 30 g, fiber 3 g, sugars 12 g, protein 3 g.",
+              "tools_triggered": "analyze_label",
+              "expected_behavior": "Converts the per-serving values to per 100 g and shows a score card rated Poor (about 29/100): very sweet, 3 kinds of added sugar, ultra-processed, with fiber listed as a positive."
+            },
+            {
+              "description": "Find healthier alternatives",
+              "prompt": "What should I buy instead of Coca-Cola? The barcode is 5449000000996.",
+              "tools_triggered": "find_healthier_alternatives",
+              "expected_behavior": "Shows a list of similar products in the colas category that score clearly higher than Coca-Cola, best first, each with its score. Tapping one opens its score card."
+            },
+            {
+              "description": "Explain a food additive",
+              "prompt": "What is E471 and is it bad for me?",
+              "tools_triggered": "explain_additive",
+              "expected_behavior": "Explains E471 (mono- and diglycerides of fatty acids), an emulsifier rated moderate risk, citing the NutriNet-Sante cohort studies, and notes the evidence is observational."
+            }
+          ],
+          "negative": [
+            {
+              "description": "Medical diagnosis or treatment request",
+              "prompt": "I have stomach pain after eating dairy. Do I have lactose intolerance and what medication should I take?"
+            },
+            {
+              "description": "Ordering or buying groceries",
+              "prompt": "Order me a jar of Nutella from the nearest supermarket."
+            },
+            {
+              "description": "Unrelated cooking request",
+              "prompt": "Give me a recipe for banana bread."
+            }
+          ]
+        },
+        "commerce": false,
+        "commerce_description": "FoodChecker doesn't sell products or process payments. It only scores food from public data."
+      },
+      "publication": {
+        "release_notes": "First release: 0-100 food health scores from a barcode, a product name or a label photo, additive explanations, and healthier alternatives."
+      }
+    }
+  }
+}

@@ -3,6 +3,7 @@ import { findAdditive, normaliseAdditiveCode } from "../src/core/additives.js";
 import { analyzeIngredients } from "../src/core/ingredients.js";
 import { computeNutriScore, nutritionPoints } from "../src/core/nutriscore.js";
 import { ratingFor, score } from "../src/core/score.js";
+import { categoryFromOff, looksLikeBeverage } from "../src/off/client.js";
 import { analyzeLabel } from "../src/service.js";
 
 const codes = (text: string) => analyzeIngredients(text).additives.map((a) => a.code).sort();
@@ -170,5 +171,22 @@ describe("additive lookup", () => {
     expect(findAdditive("Carrageenan")?.risk).toBe("moderate");
     expect(normaliseAdditiveCode("en:e150d")).toBe("e150d");
     expect(normaliseAdditiveCode("en:e322i")).toBe("e322");
+  });
+});
+
+describe("Open Food Facts records", () => {
+  it("treats a soda with unparsed French categories as a drink", () => {
+    const p = {
+      categories_tags: ["en:Boissons avec sucre ajouté", "en:Sodas au cola"],
+      nutriscore: { "2023": { grade: "c", data: { is_beverage: 0 } } },
+    };
+    expect(looksLikeBeverage(p)).toBe(true);
+    expect(categoryFromOff(p)).toBe("beverage");
+  });
+
+  it("does not treat soups, oils or alcohol as soft drinks", () => {
+    expect(looksLikeBeverage({ categories_tags: ["en:soups", "en:meals"] })).toBe(false);
+    expect(looksLikeBeverage({ categories_tags: ["en:olive-oils"] })).toBe(false);
+    expect(looksLikeBeverage({ categories_tags: ["en:beverages", "en:alcoholic-beverages", "en:beers"] })).toBe(false);
   });
 });

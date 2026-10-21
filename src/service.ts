@@ -36,6 +36,18 @@ function toItem(sp: ScoredProduct): ListItem {
   };
 }
 
+const norm = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+
+/** Prefer a product literally named what the user typed ("Nutella" over "Nutella & Go! breadsticks"). */
+function nameMatch(p: OffProduct, query: string): number {
+  const q = norm(query);
+  const name = norm(p.product_name ?? "");
+  const brand = norm(Array.isArray(p.brands) ? p.brands.join(" ") : (p.brands ?? ""));
+  if (name === q || `${brand} ${name}` === q || `${name} ${brand}` === q) return 3;
+  if (name && (name.startsWith(q) || q.startsWith(name))) return 0.5;
+  return 0;
+}
+
 /** How complete a search hit is, so the best-documented match wins among the top results. */
 function completeness(p: OffProduct): number {
   let c = 0;
@@ -61,15 +73,35 @@ export async function checkFood(args: { barcode?: string; query?: string; countr
     }
     const query = args.query?.trim();
     if (!query) throw new UserFacingError("Give me a barcode or a product name to look up.");
-    const hits = await searchProducts(query, { limit: 10, country: args.country });
+    // Relevance search, plus a popularity-sorted search for short brand-style queries ("Nutella"),
+    // where relevance alone tends to surface thin duplicate entries before the product people mean.
+    const words = norm(query).split(" ").filter(Boolean);
+    const [relevant, popular] = await Promise.all([
+      searchProducts(query, { limit: 10, country: args.country }),
+      words.length <= 3
+        ? searchProducts(query, { limit: 10, country: args.country, sortByPopularity: true }).catch(() => [] as OffProduct[])
+        : Promise.resolve([] as OffProduct[]),
+    ]);
+    const relevanceRank = new Map(relevant.map((h, i) => [h.code, i]));
+    const hits = [...relevant];
+    for (const h of popular) {
+      const text = norm(`${h.product_name ?? ""} ${Array.isArray(h.brands) ? h.brands.join(" ") : (h.brands ?? "")}`);
+      if (!relevanceRank.has(h.code) && words.every((w) => text.includes(w))) hits.push(h);
+    }
     if (!hits.length) {
       throw new UserFacingError(`No products found for "${query}". Try the brand plus product name, or share a photo of the label.`);
     }
     // Search order is relevance; break near-ties in favour of products with real data.
-    const best = hits
-      .slice(0, 6)
-      .map((h, i) => ({ h, rank: completeness(h) - i * 0.3 }))
-      .sort((x, y) => y.rank - x.rank)[0].h;
+    const rankOf = (h: OffProduct) => {
+      const pos = relevanceRank.get(h.code);
+      return (
+        completeness(h) +
+        nameMatch(h, query) +
+        Math.log10(1 + (h.unique_scans_n ?? 0)) +
+        (pos === undefined ? 0 : Math.max(0, 1.5 - pos * 0.2))
+      );
+    };
+    const best = [...hits].sort((x, y) => rankOf(y) - rankOf(x))[0];
     const full = (best.code && (await fetchProduct(best.code).catch(() => null))) || best;
     const others = hits
       .filter((h) => h.code !== best.code && h.product_name)

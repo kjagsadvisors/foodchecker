@@ -4,12 +4,10 @@ import { McpServer, type CallToolResult } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { additiveLine, productText } from "./format.js";
 import { WIDGET_URI, widgetHtml } from "./widget.js";
+import { PUBLIC_URL } from "../config.js";
 import { UserFacingError, analyzeLabel, checkFood, explainAdditive, findAlternatives, type ProductView } from "../service.js";
 
 export const VERSION = "0.1.0";
-
-/** Public origin of the hosted instance, used for the server icon and website link. */
-export const PUBLIC_URL = process.env.PUBLIC_URL ?? "https://foodchecker-ebon.vercel.app";
 
 const INSTRUCTIONS = `FoodChecker rates packaged food and drinks from 0 to 100 (Excellent 75+, Good 50-74, Poor 25-49, Bad 0-24).
 The score starts from nutrition quality (Nutri-Score 2023), then takes a percentage off for risky additives and ultra-processing (NOVA). High-risk additives or trans fat cap the score at 49.
@@ -19,16 +17,31 @@ The score starts from nutrition quality (Nutri-Score 2023), then takes a percent
 - Questions about a specific additive (E-number or name): call explain_additive.
 When you answer, lead with the score and rating, then the two or three biggest reasons. The card already shows the full breakdown, so don't repeat all of it. Never invent a score; only report what the tools return. This is general information, not medical advice. Mention that briefly when the user has a health condition.`;
 
-const UI_META = {
-  ui: { resourceUri: WIDGET_URI },
-  "openai/outputTemplate": WIDGET_URI,
-  "openai/toolInvocation/invoking": "Reading the label…",
-  "openai/toolInvocation/invoked": "Label checked",
-};
+function uiMeta(invoking: string, invoked: string) {
+  return {
+    ui: { resourceUri: WIDGET_URI },
+    "openai/outputTemplate": WIDGET_URI,
+    "openai/toolInvocation/invoking": invoking,
+    "openai/toolInvocation/invoked": invoked,
+  };
+}
 
 const READ_ONLY = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true } as const;
 
-const IMAGE_DOMAINS = ["https://images.openfoodfacts.org", "https://static.openfoodfacts.org"];
+const ORIGIN = new URL(PUBLIC_URL).origin;
+// Product photos are proxied through our own origin (see /img in app.ts), so the widget loads nothing from third parties.
+const RESOURCE_DOMAINS = [ORIGIN];
+// Links the widget may open: the product's Open Food Facts page and our own site.
+const LINK_DOMAINS = ["https://world.openfoodfacts.org", ORIGIN];
+
+export interface ServerOptions {
+  /**
+   * ChatGPT requires `_meta.ui.domain` (an https origin) for directory review, while Claude
+   * rejects any value that isn't its own hashed sandbox domain. The /chatgpt/mcp endpoint sets it;
+   * /mcp leaves it out so the widget renders everywhere else.
+   */
+  chatgpt?: boolean;
+}
 
 function ok(text: string, structuredContent: Record<string, unknown>): CallToolResult {
   return { content: [{ type: "text", text }], structuredContent };
@@ -45,7 +58,7 @@ function productResult(view: ProductView): CallToolResult {
   if (view.otherMatches?.length) {
     text += `\nOther matches for this search: ${view.otherMatches
       .map((m) => `${m.name}${m.brand ? ` (${m.brand})` : ""} ${m.score ?? "?"}/100, barcode ${m.barcode}`)
-      .join("; ")}. If the user meant one of these, call check_food with its barcode.`;
+      .join("; ")}.`;
   }
   return ok(text, view as unknown as Record<string, unknown>);
 }
@@ -71,7 +84,7 @@ const nutritionSchema = z
   })
   .describe("The nutrition facts table, copied exactly.");
 
-export function createServer(): McpServer {
+export function createServer(options: ServerOptions = {}): McpServer {
   const server = new McpServer(
     {
       name: "foodchecker",
@@ -98,12 +111,15 @@ export function createServer(): McpServer {
           mimeType: RESOURCE_MIME_TYPE,
           text: widgetHtml(),
           _meta: {
-            ui: { csp: { resourceDomains: IMAGE_DOMAINS, connectDomains: [] }, prefersBorder: false },
+            ui: {
+              csp: { resourceDomains: RESOURCE_DOMAINS, connectDomains: [] },
+              prefersBorder: false,
+              ...(options.chatgpt ? { domain: process.env.CHATGPT_WIDGET_DOMAIN ?? ORIGIN } : {}),
+            },
             "openai/widgetDescription":
               "Shows the product's 0-100 health score, rating, Nutri-Score, processing level, additives with risk levels, and healthier alternatives.",
             "openai/widgetPrefersBorder": false,
-            "openai/widgetCSP": { resource_domains: IMAGE_DOMAINS, connect_domains: [] },
-            ...(process.env.CHATGPT_WIDGET_DOMAIN ? { "openai/widgetDomain": process.env.CHATGPT_WIDGET_DOMAIN } : {}),
+            "openai/widgetCSP": { resource_domains: RESOURCE_DOMAINS, connect_domains: [], redirect_domains: LINK_DOMAINS },
           },
         },
       ],
@@ -123,7 +139,7 @@ export function createServer(): McpServer {
         country: z.string().optional().describe("Optional country to prefer when searching by name, e.g. 'united-states', 'france', 'united-kingdom'."),
       }),
       annotations: READ_ONLY,
-      _meta: UI_META,
+      _meta: uiMeta("Checking the product…", "Product checked"),
     },
     async (args) => {
       try {
@@ -154,7 +170,7 @@ export function createServer(): McpServer {
         fruit_veg_percent: z.number().min(0).max(100).optional().describe("% of fruit, vegetables and legumes, if the label states it."),
       }),
       annotations: { ...READ_ONLY, openWorldHint: false },
-      _meta: UI_META,
+      _meta: uiMeta("Reading the label…", "Label scored"),
     },
     async (args) => {
       try {
@@ -181,7 +197,7 @@ export function createServer(): McpServer {
         limit: z.number().int().min(1).max(10).optional(),
       }),
       annotations: READ_ONLY,
-      _meta: UI_META,
+      _meta: uiMeta("Finding healthier options…", "Alternatives found"),
     },
     async (args) => {
       try {
@@ -208,7 +224,7 @@ export function createServer(): McpServer {
       description: "Explain what a food additive is, what it does, and its risk level, by E-number (E250) or name (sodium nitrite, Red 40, carrageenan).",
       inputSchema: z.object({ additive: z.string().describe("E-number or name, e.g. 'E471' or 'Red 40'.") }),
       annotations: { ...READ_ONLY, openWorldHint: false },
-      _meta: UI_META,
+      _meta: uiMeta("Looking up the additive…", "Additive explained"),
     },
     async (args) => {
       try {

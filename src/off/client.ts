@@ -4,6 +4,7 @@
  * OFF asks every app to send a descriptive User-Agent and to stay under
  * 100 product reads/min and 10 searches/min, so responses are cached in memory.
  */
+import { PUBLIC_URL } from "../config.js";
 import { hasCoreNutrition } from "../core/nutriscore.js";
 import type { FoodCategory, NovaGroup, NutriGrade, Nutrition, ProductInput } from "../core/types.js";
 
@@ -39,7 +40,7 @@ const PRODUCT_FIELDS = [
 
 // The search index has no ingredient text, additive tags or 2023 Nutri-Score object.
 // Additives are recovered from ingredients_tags, and nutriscore_data gives the product family.
-const SEARCH_FIELDS = PRODUCT_FIELDS.replace(",nutriscore,", ",nutriscore_data,");
+const SEARCH_FIELDS = PRODUCT_FIELDS.replace(",nutriscore,", ",nutriscore_data,unique_scans_n,");
 
 export interface OffProduct {
   code?: string;
@@ -58,6 +59,8 @@ export interface OffProduct {
   nutriscore_grade?: string;
   nutriscore_score?: number;
   nutriscore?: Record<string, { grade?: string; score?: number; nutriscore_applicable?: number; data?: Record<string, unknown> }>;
+  /** Search index only: how many people scanned it, a proxy for "the product people mean". */
+  unique_scans_n?: number;
   /** Search index only: older Nutri-Score inputs, including the product family flags. */
   nutriscore_data?: Record<string, unknown>;
   nutriments?: Record<string, number | string>;
@@ -187,11 +190,21 @@ export function nutritionFromOff(nm: OffProduct["nutriments"]): Nutrition | unde
   return defined ? n : undefined;
 }
 
+/**
+ * Some records carry unparsed categories ("en:Boissons gazeuses sucrées"), so Open Food Facts
+ * scores a soda as a solid food. Catch obvious drinks from the raw category text in any language.
+ */
+export function looksLikeBeverage(p: OffProduct): boolean {
+  const text = (p.categories_tags ?? []).join(" ").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
+  if (/alcohol|alcool|beer|biere|wine|vin\b|spirit|soup|soupe|oil|huile|syrup|sirop/.test(text)) return false;
+  return /beverage|boisson|drink|soda|cola\b|juice|\bjus\b|bebida|getrank|lemonade|limonade|iced-tea|energy-drink/.test(text);
+}
+
 export function categoryFromOff(p: OffProduct): FoodCategory {
   const flags = p.nutriscore?.["2023"]?.data;
   if (flags) {
     if (flags.is_water) return "water";
-    if (flags.is_beverage) return "beverage";
+    if (flags.is_beverage || looksLikeBeverage(p)) return "beverage";
     if (flags.is_cheese) return "cheese";
     if (flags.is_fat_oil_nuts_seeds) return "fat_oil_nuts_seeds";
     if (flags.is_red_meat_product) return "red_meat";
@@ -199,7 +212,7 @@ export function categoryFromOff(p: OffProduct): FoodCategory {
   }
   const old = p.nutriscore_data;
   if (old?.is_water) return "water";
-  if (old?.is_beverage) return "beverage";
+  if (old?.is_beverage || looksLikeBeverage(p)) return "beverage";
   if (old?.is_cheese) return "cheese";
   const tags = new Set(p.categories_tags ?? []);
   const has = (...t: string[]) => t.some((x) => tags.has(x));
@@ -215,6 +228,9 @@ export function categoryFromOff(p: OffProduct): FoodCategory {
 function officialGrade(p: OffProduct, nutrition: Nutrition | undefined): { grade: NutriGrade; score?: number } | undefined {
   // Search hits may carry a grade from the 2021 algorithm; prefer computing it ourselves when we can.
   if (!p.nutriscore && hasCoreNutrition(nutrition)) return undefined;
+  // OFF graded a drink as a food (unparsed categories): its grade used the wrong rules.
+  const flags = p.nutriscore?.["2023"]?.data ?? p.nutriscore_data;
+  if (flags && !flags.is_beverage && !flags.is_water && looksLikeBeverage(p) && hasCoreNutrition(nutrition)) return undefined;
   const v2023 = p.nutriscore?.["2023"];
   const g = (v2023?.grade ?? p.nutriscore_grade ?? "").toLowerCase();
   if (!/^[a-e]$/.test(g)) return undefined;
@@ -240,7 +256,7 @@ export function toProductInput(p: OffProduct): ProductInput {
     name: p.product_name_en || p.product_name || p.generic_name,
     brand: brand?.split(",")[0]?.trim() || undefined,
     quantity: p.quantity,
-    imageUrl: p.image_front_url || p.image_front_small_url,
+    imageUrl: proxiedImage(p.image_front_url || p.image_front_small_url),
     url: p.code ? `https://world.openfoodfacts.org/product/${p.code}` : undefined,
     category: categoryFromOff(p),
     nutrition,
@@ -253,6 +269,27 @@ export function toProductInput(p: OffProduct): ProductInput {
     allergens: (p.allergens_tags ?? []).map(tagLabel),
     categories: p.categories_tags,
   };
+}
+
+const OFF_IMAGES = "https://images.openfoodfacts.org/";
+
+/** Serve product photos from our own origin (/img/...), so the widget only loads first-party resources. */
+export function proxiedImage(url: string | undefined): string | undefined {
+  if (!url?.startsWith(OFF_IMAGES)) return undefined;
+  return `${PUBLIC_URL}/img/${url.slice(OFF_IMAGES.length)}`;
+}
+
+/** Fetch a product photo for the /img proxy. Only Open Food Facts product image paths are allowed. */
+export async function fetchProductImage(path: string): Promise<Response | null> {
+  if (!/^images\/products\/[0-9/]+\/[a-z0-9_.-]+\.(?:jpg|jpeg|png|webp)$/i.test(path)) return null;
+  const res = await fetch(OFF_IMAGES + path, { headers: { "User-Agent": USER_AGENT }, signal: AbortSignal.timeout(10_000) });
+  if (!res.ok || !res.body) return null;
+  return new Response(res.body, {
+    headers: {
+      "content-type": res.headers.get("content-type") ?? "image/jpeg",
+      "cache-control": "public, max-age=604800, s-maxage=604800, immutable",
+    },
+  });
 }
 
 function tagLabel(tag: string): string {

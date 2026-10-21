@@ -2,7 +2,9 @@
  * Web-standard request handler (Request -> Response), so it runs on Node, Vercel,
  * Cloudflare Workers, Deno or Bun.
  *
- *   /mcp           MCP endpoint (Streamable HTTP) for ChatGPT, Claude and other clients
+ *   /mcp           MCP endpoint (Streamable HTTP) for Claude and other clients
+ *   /chatgpt/mcp   same server for the ChatGPT app directory (adds the widget domain ChatGPT requires)
+ *   /img/...       product photos from Open Food Facts, served from our own origin
  *   /              landing page with setup instructions
  *   /privacy, /terms, /support   pages that app directories link to
  *   /preview       the score card rendered as a normal web page (?barcode= or ?q=)
@@ -13,9 +15,12 @@ import { createMcpHandler } from "@modelcontextprotocol/server";
 import { VERSION, createServer } from "./mcp/server.js";
 import { widgetHtml } from "./mcp/widget.js";
 import { ICON_SVG, landingPage, privacyPage, supportPage, termsPage } from "./pages.js";
+import { fetchProductImage } from "./off/client.js";
 import { UserFacingError, analyzeLabel, checkFood, explainAdditive, findAlternatives } from "./service.js";
 
 const mcp = createMcpHandler(() => createServer());
+// Same tools, plus the `_meta.ui.domain` that ChatGPT's directory review requires (see ServerOptions).
+const mcpChatGpt = createMcpHandler(() => createServer({ chatgpt: true }));
 
 const CORS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -57,6 +62,12 @@ export async function handle(request: Request): Promise<Response> {
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
 
   if (path === "/mcp") return withHeaders(await mcp.fetch(request), CORS);
+  if (path === "/chatgpt/mcp") return withHeaders(await mcpChatGpt.fetch(request), CORS);
+
+  if (path.startsWith("/img/") && request.method === "GET") {
+    const image = await fetchProductImage(path.slice("/img/".length)).catch(() => null);
+    return image ?? new Response("Not found", { status: 404 });
+  }
 
   if (path === "/health") return json({ ok: true, name: "foodchecker", version: VERSION });
 

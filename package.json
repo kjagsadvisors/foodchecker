@@ -24,7 +24,8 @@
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "smoke": "tsx scripts/smoke.ts",
-    "dev:host": "esbuild scripts/dev-host/host.ts --bundle --format=iife --platform=browser --outfile=scripts/dev-host/dist/host.js"
+    "dev:host": "esbuild scripts/dev-host/host.ts --bundle --format=iife --platform=browser --outfile=scripts/dev-host/dist/host.js",
+    "package:chatgpt": "cd store/chatgpt && rm -f ../foodchecker-chatgpt.zip && zip -r -X -q ../foodchecker-chatgpt.zip . -x \"*.DS_Store\""
   },
   "dependencies": {
     "@modelcontextprotocol/ext-apps": "^2.0.3",

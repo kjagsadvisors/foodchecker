@@ -1,0 +1,18 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.kjagsadvisors/foodchecker",
+  "title": "FoodChecker",
+  "description": "Is this food healthy? A 0-100 score from nutrition, additives and processing (Open Food Facts).",
+  "version": "0.1.0",
+  "websiteUrl": "https://foodchecker-ebon.vercel.app",
+  "repository": {
+    "url": "https://github.com/kjagsadvisors/foodchecker",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://foodchecker-ebon.vercel.app/mcp"
+    }
+  ]
+}

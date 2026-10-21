@@ -2,8 +2,15 @@
   "name": "foodchecker",
   "displayName": "FoodChecker",
   "version": "0.1.0",
-  "description": "Open-source food label checker. Scores packaged food and drinks 0-100 (Excellent / Good / Poor / Bad) from nutrition (Nutri-Score), risky additives and ultra-processing, with healthier alternatives. Data from Open Food Facts.",
-  "author": { "name": "FoodChecker contributors" },
+  "description": "Check whether packaged food is healthy. Scores food and drinks 0-100 (Excellent / Good / Poor / Bad) from nutrition (Nutri-Score 2023), risky additives and ultra-processing, explains every additive, and suggests healthier alternatives. Works from a barcode, a product name or a photo of the label. Data from Open Food Facts.",
+  "author": { "name": "Kjags Advisors", "url": "https://github.com/kjagsadvisors" },
+  "homepage": "https://foodchecker-ebon.vercel.app",
+  "repository": "https://github.com/kjagsadvisors/foodchecker",
   "license": "MIT",
-  "keywords": ["food", "nutrition", "health", "ingredients", "additives", "nutri-score", "open-food-facts"]
+  "keywords": ["food", "nutrition", "health", "ingredients", "additives", "nutri-score", "open-food-facts"],
+  "icon": "./logo.png",
+  "documentationUrl": "https://github.com/kjagsadvisors/foodchecker#readme",
+  "supportUrl": "https://foodchecker-ebon.vercel.app/support",
+  "privacyPolicyUrl": "https://foodchecker-ebon.vercel.app/privacy",
+  "termsOfServiceUrl": "https://foodchecker-ebon.vercel.app/terms"
 }
