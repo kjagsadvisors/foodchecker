@@ -229,10 +229,10 @@ ${injected}
         '<span class="val">' + esc(l.value) + " " + esc(l.unit) + "</span></div>";
     }).join("");
   }
-  function additiveRows(items) {
+  function additiveRows(items, open) {
     return items.map(function (a) {
       var risk = a.risk === "none" ? "no risk" : a.risk === "unknown" ? "not rated" : a.risk + " risk";
-      return '<details class="row"><summary><span class="pill r-' + a.risk + '">' + esc(risk) + "</span>" +
+      return '<details class="row"' + (open ? " open" : "") + '><summary><span class="pill r-' + a.risk + '">' + esc(risk) + "</span>" +
         '<div class="grow"><b>' + esc(codeLabel(a.code)) + "</b> " + esc(a.name) + "<small>" + esc(a.function) + "</small></div></summary>" +
         (a.why ? "<p>" + esc(a.why) + (a.sources && a.sources.length ? "<br><i>Sources: " + esc(a.sources.join("; ")) + "</i>" : "") + "</p>" : "<p>No known health concern at normal intake.</p>") +
         "</details>";
@@ -314,7 +314,7 @@ ${injected}
   function renderAdditive(d) {
     var a = d.additive;
     return '<p class="title">' + esc(codeLabel(a.code)) + " · " + esc(a.name) + '</p><div class="sub">' + esc(a.function) + "</div>" +
-      '<div class="rows" style="margin-top:10px">' + additiveRows([a]) + "</div>" +
+      '<div class="rows" style="margin-top:10px">' + additiveRows([a], true) + "</div>" +
       '<div class="foot">Risk levels are an open, sourced editorial table. Not medical advice.</div>';
   }
 
