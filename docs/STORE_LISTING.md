@@ -6,8 +6,8 @@ Every field the stores ask for, ready to paste.
 | --- | --- | --- |
 | Official MCP Registry | **Live** as `io.github.kjagsadvisors/foodchecker` | Nothing. Re-run the "Publish to MCP Registry" GitHub Action after bumping `server.json`. |
 | ChatGPT app directory | Package ready: `store/foodchecker-chatgpt.zip` (`npm run package:chatgpt`) | Verify identity, upload, domain token, demo video, submit |
-| Claude connectors directory | Listing, icon and screenshots ready | Paste the fields below, submit |
-| Claude plugin directory | `plugins/foodchecker` passes `claude plugin validate` | Connect GitHub in the portal, submit |
+| Claude connectors directory | **Submitted 2026-10-21**, in review | Wait for Anthropic's email; publish once approved |
+| Claude plugin directory | **Submitted 2026-10-21**, in review (auto-publish on, scheduled 6-hourly checks) | Publish from the plugin's page once approved |
 
 Shared links:
 
